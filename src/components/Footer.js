@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGlobe } from "@fortawesome/free-solid-svg-icons";
 
 // Import the content components for the modals (adjust paths as needed)
 import PrivacyPolicy from './InfoPages/PrivacyPolicy';
 import TermsOfService from './InfoPages/TermsOfService';
 import AboutUs from './InfoPages/AboutUs';
 import ContactUs from './InfoPages/ContactUs';
-
 
 // Map content keys to their respective components
 const MODAL_COMPONENTS = {
@@ -17,6 +18,69 @@ const MODAL_COMPONENTS = {
 
 const Footer = () => {
   const [activeModalContent, setActiveModalContent] = useState(null);
+  const [translateVisible, setTranslateVisible] = useState(false);
+
+  useEffect(() => {
+    // Wait for Google Translate to be available and then initialize
+    const initTranslate = () => {
+      if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+        try {
+          // Clear any existing translate element
+          const translateDiv = document.getElementById('footer_translate_element');
+          if (translateDiv) {
+            translateDiv.innerHTML = '';
+            
+            // Initialize Google Translate
+            new window.google.translate.TranslateElement({
+              pageLanguage: 'en',
+              includedLanguages: 'en,hi,nl,es,fr,de,it,pt,ru,ja,ko,zh,ar,bn',
+              layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+              autoDisplay: false,
+              multilanguagePage: true
+            }, 'footer_translate_element');
+          }
+        } catch (error) {
+          console.log('Google Translate initialization error:', error);
+        }
+      }
+    };
+
+    // Try to initialize when component mounts
+    const timer = setTimeout(() => {
+      initTranslate();
+    }, 1000); // Give some time for Google Translate to fully load
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Reinitialize when dropdown becomes visible
+  useEffect(() => {
+    if (translateVisible && window.google && window.google.translate) {
+      const timer = setTimeout(() => {
+        const translateDiv = document.getElementById('footer_translate_element');
+        if (translateDiv) {
+          translateDiv.innerHTML = '';
+          try {
+            new window.google.translate.TranslateElement({
+              pageLanguage: 'en',
+              includedLanguages: 'en,hi,nl,es,fr,de,it,pt,ru,ja,ko,zh,ar,bn',
+              layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+              autoDisplay: false,
+              multilanguagePage: true
+            }, 'footer_translate_element');
+          } catch (error) {
+            console.log('Google Translate reinit error:', error);
+          }
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [translateVisible]);
+
+  const toggleTranslate = () => {
+    setTranslateVisible(!translateVisible);
+  };
 
   const openInfoModal = (contentTypeKey) => {
     setActiveModalContent(MODAL_COMPONENTS[contentTypeKey]);
@@ -43,28 +107,15 @@ const Footer = () => {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Flower petals */}
       <path
         d="M50 30C45 25 35 25 35 35C35 25 25 25 30 35C25 35 25 45 35 45C25 45 25 55 35 55C35 65 45 65 50 55C55 65 65 65 65 55C75 55 75 45 65 45C75 45 75 35 65 35C65 25 55 25 50 30Z"
         fill="rgba(76, 175, 80, 0.1)"
         stroke="rgba(76, 175, 80, 0.2)"
         strokeWidth="0.5"
       />
-      <circle
-        cx="50"
-        cy="45"
-        r="6"
-        fill="rgba(129, 199, 132, 0.3)"
-      />
-      {/* Small leaves */}
-      <path
-        d="M40 55L35 65Q40 70 45 65Z"
-        fill="rgba(76, 175, 80, 0.15)"
-      />
-      <path
-        d="M60 55L65 65Q60 70 55 65Z"
-        fill="rgba(76, 175, 80, 0.15)"
-      />
+      <circle cx="50" cy="45" r="6" fill="rgba(129, 199, 132, 0.3)" />
+      <path d="M40 55L35 65Q40 70 45 65Z" fill="rgba(76, 175, 80, 0.15)" />
+      <path d="M60 55L65 65Q60 70 55 65Z" fill="rgba(76, 175, 80, 0.15)" />
     </svg>
   );
 
@@ -339,6 +390,109 @@ const Footer = () => {
                     </a>
                   ))}
                 </div>
+                
+                {/* Google Translate Button */}
+                <div style={{ position: "relative" }}>
+                  <button
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "50px",
+                      height: "50px",
+                      backgroundColor: translateVisible ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.1)",
+                      borderRadius: "50%",
+                      border: "1px solid rgba(255, 255, 255, 0.15)",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
+                      e.target.style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = translateVisible ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.1)";
+                      e.target.style.transform = "translateY(0)";
+                    }}
+                    onClick={toggleTranslate}
+                    title="Translate Page"
+                  >
+                    <FontAwesomeIcon icon={faGlobe} style={{ color: "#ffffff", fontSize: "1.2rem" }} />
+                  </button>
+
+                  {/* Google Translate Dropdown */}
+                  {translateVisible && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "60px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        background: "white",
+                        borderRadius: "12px",
+                        padding: "20px 20px 15px 20px",
+                        boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
+                        zIndex: 1000,
+                        minWidth: "220px",
+                        border: "1px solid rgba(76, 175, 80, 0.2)"
+                      }}
+                    >
+                      <div style={{ marginBottom: '10px', fontSize: '14px', color: '#1b5e20', fontWeight: '600' }}>
+                        Choose Language:
+                      </div>
+                      <div 
+                        id="footer_translate_element"
+                        style={{ 
+                          fontSize: '14px',
+                          fontFamily: "'Inter', sans-serif"
+                        }}
+                      />
+                      <button
+                        onClick={() => setTranslateVisible(false)}
+                        style={{
+                          position: 'absolute',
+                          top: '8px',
+                          right: '8px',
+                          background: 'none',
+                          border: 'none',
+                          fontSize: '18px',
+                          cursor: 'pointer',
+                          color: '#666',
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#f0f0f0';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = 'transparent';
+                        }}
+                      >
+                        ×
+                      </button>
+                      {/* Arrow pointing down */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: '-8px',
+                          left: '50%',
+                          transform: 'translateX(-50%) rotate(45deg)',
+                          width: '16px',
+                          height: '16px',
+                          background: 'white',
+                          border: '1px solid rgba(76, 175, 80, 0.2)',
+                          borderTop: 'none',
+                          borderLeft: 'none'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
 
                 {/* GitHub Link */}
                 <a
@@ -404,18 +558,81 @@ const Footer = () => {
         </div>
       </footer>
 
-      {/* CSS for hover effects */}
-      <style jsx>{`
-        a:hover .hover-line {
-          width: 100% !important;
-        }
-        
-        @media (max-width: 768px) {
-          .flower-pattern {
+      {/* Global CSS styles */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          /* Hover effects */
+          .hover-line {
+            transition: width 0.3s ease;
+          }
+          
+          footer a:hover .hover-line {
+            width: 100% !important;
+          }
+          
+          @media (max-width: 768px) {
+            .flower-pattern {
+              display: none !important;
+            }
+          }
+
+          /* Google Translate Styling */
+          #footer_translate_element .goog-te-gadget {
+            font-family: 'Inter', sans-serif !important;
+            font-size: 14px !important;
+            color: #1b5e20 !important;
+          }
+
+          #footer_translate_element .goog-te-gadget .goog-te-combo {
+            margin: 4px 0 !important;
+            border: 2px solid #e8f5e9 !important;
+            padding: 8px 12px !important;
+            border-radius: 8px !important;
+            background: linear-gradient(135deg, #f1f8e9, #e8f5e9) !important;
+            color: #1b5e20 !important;
+            font-weight: 500 !important;
+            cursor: pointer !important;
+            font-family: 'Inter', sans-serif !important;
+            transition: all 0.3s ease !important;
+            min-width: 180px !important;
+          }
+
+          #footer_translate_element .goog-te-gadget .goog-te-combo:hover {
+            border-color: #4caf50 !important;
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9) !important;
+          }
+
+          #footer_translate_element .goog-te-gadget .goog-te-combo:focus {
+            outline: none !important;
+            border-color: #4caf50 !important;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1) !important;
+          }
+
+          /* Hide Google Translate branding for footer element */
+          #footer_translate_element .goog-logo-link,
+          #footer_translate_element .goog-te-gadget span:first-child,
+          #footer_translate_element .goog-te-gadget > span > a {
             display: none !important;
           }
-        }
-      `}</style>
+
+          /* Hide the annoying Google Translate banner */
+          .goog-te-banner-frame {
+            display: none !important;
+          }
+
+          body {
+            top: 0 !important;
+          }
+
+          /* Style any translate menu frames */
+          .goog-te-menu-frame {
+            max-height: 300px !important;
+            overflow-y: auto !important;
+            border-radius: 8px !important;
+            border: 1px solid rgba(76, 175, 80, 0.2) !important;
+          }
+        `
+      }} />
 
       {renderInfoModal()}
     </>
